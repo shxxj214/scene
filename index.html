@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scene-Spec - 로케이션 환경 데이터 워크스페이스</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            dark: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Inter Font & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-full overflow-hidden flex flex-col">
+
+    <!-- Notification / Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Main App Container -->
+    <div class="flex h-full w-full overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between shrink-0 select-none transition-all duration-300 z-20">
+            <div>
+                <!-- Logo & Brand -->
+                <div class="h-16 flex items-center px-6 border-b border-slate-800/80 gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid fa-clapperboard"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Scene-Spec</h1>
+                        <p class="text-xs text-emerald-400 font-medium">부산 로케이션 워크스페이스</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="p-4 space-y-1.5">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i> 대시보드 요약
+                    </button>
+                    <button onclick="switchTab('inspector')" id="nav-inspector" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+                        <i class="fa-solid fa-sun w-5 text-center"></i> 환경 인스펙터
+                    </button>
+                    <button onclick="switchTab('simulator')" id="nav-simulator" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+                        <i class="fa-solid fa-compass-drafting w-5 text-center"></i> 2D 도면 시뮬레이터
+                    </button>
+                    <button onclick="switchTab('matching')" id="nav-matching" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+                        <i class="fa-solid fa-people-group w-5 text-center"></i> 장비 & 스태프 매칭
+                    </button>
+                    <button onclick="switchTab('booking')" id="nav-booking" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+                        <i class="fa-solid fa-building-shield w-5 text-center"></i> 원스톱 대관 & 예약
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer / Creator Profile -->
+            <div class="p-4 border-t border-slate-800/80 bg-slate-900/50">
+                <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-900 border border-slate-800">
+                    <img src="https://placehold.co/40x40/10b981/ffffff?text=PD" alt="프로필" class="w-9 h-9 rounded-lg object-cover">
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-xs font-semibold text-slate-200 truncate">김PD (총괄 디렉터)</p>
+                        <p class="text-[10px] text-emerald-400 truncate">부산영상위원회 협력 회원</p>
+                    </div>
+                    <button onclick="showToast('설정 메뉴는 준비 중입니다.', 'info')" class="text-slate-400 hover:text-slate-200 p-1">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-900">
+            <!-- Top Header -->
+            <header class="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-8 flex items-center justify-between shrink-0 z-10">
+                <div class="flex items-center gap-4">
+                    <span id="current-breadcrumb" class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Workspace / 대시보드 요약
+                    </span>
+                    <h2 id="page-title" class="text-lg font-bold text-slate-100 tracking-tight">프로젝트 통합 현황</h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="showToast('새로운 로케이션 분석 세션이 생성되었습니다!', 'success')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> 새 로케이션 분석
+                    </button>
+                    <button onclick="showToast('새로운 알림이 없습니다.', 'info')" class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-200 transition-all">
+                        <i class="fa-regular fa-bell"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Content Viewport -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+
+                <!-- TAB 1: DASHBOARD -->
+                <section id="tab-dashboard" class="space-y-6">
+                    <!-- Banner -->
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-900/40 via-teal-900/30 to-slate-900 border border-emerald-500/20 p-8">
+                        <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="relative z-10 max-w-2xl">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-md border border-emerald-500/20">부산 촬영 현장 리스크 완벽 차단</span>
+                            <h3 class="text-2xl font-bold text-white mt-3 mb-2">"가서 찍어보니 해가 넘어가고 소음 때문에 대사가 안 들린다고요?"</h3>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                부산 해운대, 광안리, 영도 등 주요 로케이션의 햇빛·소음·전기 데이터를 사전 분석하고 2D 도면에 장비를 배치하세요.
+                            </p>
+                            <div class="flex items-center gap-4 mt-6">
+                                <button onclick="switchTab('inspector')" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-arrow-right"></i> 환경 인스펙터 열기
+                                </button>
+                                <button onclick="switchTab('simulator')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-all">
+                                    2D 도면 시뮬레이터
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-400">등록된 부산 촬영지</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span class="text-2xl font-bold text-white">480개소</span>
+                                <span class="text-xs font-semibold text-emerald-400">환경 인증 완료</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">해운대·광안리·영도 중심</p>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-400">시뮬레이션 실행 회수</span>
+                                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-compass-drafting"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span class="text-2xl font-bold text-white">3,120회</span>
+                                <span class="text-xs font-semibold text-emerald-400">+18% 이번 달</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">스태프 공유 및 협업 도면</p>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-400">현장 리스크 차단율</span>
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span class="text-2xl font-bold text-white">98.2%</span>
+                                <span class="text-xs font-semibold text-emerald-400">사전 예방</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">일조·소음·전기 사고 방지</p>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-400">제휴 렌탈 & 스태프</span>
+                                <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-handshake"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span class="text-2xl font-bold text-white">120개소</span>
+                                <span class="text-xs font-semibold text-emerald-400">부산 권역 매칭</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">원스톱 장비·인력 연결</p>
+                        </div>
+                    </div>
+
+                    <!-- Roadmap & Current Active Project -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h4 class="font-bold text-base text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-road text-emerald-400"></i> Scene-Spec 4단계 솔루션
+                                </h4>
+                                <span class="text-xs font-medium text-slate-400">Phase 1 ~ 4</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-slate-900 border border-slate-800/80 p-4 rounded-xl">
+                                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs mb-2">
+                                        <span class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">1</span> 환경 정보 인스펙터
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-relaxed">일출, 골든타임, 피크 햇빛 시간대와 소음·전기 용량을 한눈에 확인합니다.</p>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-800/80 p-4 rounded-xl">
+                                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs mb-2">
+                                        <span class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">2</span> 2D 도면 시뮬레이터
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-relaxed">도면 위에 카메라, 조명, 녹음 장비를 배치하고 각도를 미리 시뮬레이션합니다.</p>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-800/80 p-4 rounded-xl">
+                                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs mb-2">
+                                        <span class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">3</span> 장비 & 스태프 매칭
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-relaxed">부산 인근 장비 대여점과 전문 촬영 감독·오디오 스태프를 즉시 연결합니다.</p>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-800/80 p-4 rounded-xl">
+                                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs mb-2">
+                                        <span class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">4</span> 원스톱 대관 & 예약
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-relaxed">검증된 촬영지를 환경 인증 뱃지와 함께 안전하게 예약하고 결제합니다.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-base text-white mb-4 flex items-center gap-2">
+                                    <i class="fa-solid fa-video text-emerald-400"></i> 활성 촬영 프로젝트
+                                </h4>
+                                <div class="space-y-4">
+                                    <div class="p-4 bg-slate-900 rounded-xl border border-slate-800">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h5 class="font-bold text-sm text-slate-200">영화 '해운대의 밤' 오프닝</h5>
+                                                <p class="text-[11px] text-slate-400 mt-0.5">부산 해운대 오션뷰 스튜디오</p>
+                                            </div>
+                                            <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold rounded-md border border-emerald-500/20">인증완료</span>
+                                        </div>
+                                        <div class="space-y-1 mt-3">
+                                            <div class="flex justify-between text-[11px] text-slate-400">
+                                                <span>골든타임</span>
+                                                <span class="text-amber-400 font-medium">18:10 ~ 19:00</span>
+                                            </div>
+                                            <div class="flex justify-between text-[11px] text-slate-400">
+                                                <span>소음 레벨</span>
+                                                <span class="text-emerald-400 font-medium">32 dB (매우 조용)</span>
+                                            </div>
+                                            <div class="flex justify-between text-[11px] text-slate-400">
+                                                <span>전력 용량</span>
+                                                <span class="text-sky-400 font-medium">30 kW (안전)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="switchTab('inspector')" class="w-full mt-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-all text-center">
+                                환경 인스펙터 실행
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: INSPECTOR (환경 인스펙터) -->
+                <section id="tab-inspector" class="space-y-6 hidden">
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-sun text-amber-400"></i> 탭 1: 로케이션 환경 인스펙터 (부산 지역)
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-1">부산 주요 촬영지의 일출, 피크 햇빛, 골든타임, 소음 및 전력 용량을 실시간 검증합니다.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <select id="busan-spot-select" onchange="updateInspectorData()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500">
+                                    <option value="haeundae">해운대 오션뷰 스튜디오 A동</option>
+                                    <option value="gwangalli">광안리 루프탑 호리존 B동</option>
+                                    <option value="yeongdo">영도 산업단지 창고형 스튜디오</option>
+                                    <option value="nampodong">남포동 올드카페 세트장</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 3 Environmental Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <!-- Sunlight Timing Chart Card -->
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <span class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                                            <i class="fa-solid fa-sun text-amber-400"></i> 햇빛 타이밍 차트
+                                        </span>
+                                        <span id="sun-badge" class="px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] font-semibold rounded-md border border-amber-500/20">일조량 최적</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">일출 시간</span>
+                                            <span id="sun-rise" class="text-white font-semibold">06:12 AM</span>
+                                        </div>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">피크 햇빛 (정오)</span>
+                                            <span id="sun-peak" class="text-amber-400 font-semibold">12:30 ~ 14:30</span>
+                                        </div>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">골든타임 (석양)</span>
+                                            <span id="sun-golden" class="text-amber-300 font-semibold">18:10 ~ 19:00</span>
+                                        </div>
+                                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+                                            <div id="sun-progress" class="bg-amber-400 h-full w-4/5 transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="toggleSunSimulation()" class="w-full mt-5 py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-all">
+                                    일일 채광 변화 시뮬레이션
+                                </button>
+                            </div>
+
+                            <!-- Noise Decibel Level Card -->
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <span class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                                            <i class="fa-solid fa-volume-high text-emerald-400"></i> 소음 데시벨 (dB) 검증
+                                        </span>
+                                        <span id="noise-badge" class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold rounded-md border border-emerald-500/20">녹음 안전</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">평균 배경 소음</span>
+                                            <span id="noise-avg" class="text-white font-semibold">32 dB (조용한 실내)</span>
+                                        </div>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">주변 소음원 리스크</span>
+                                            <span id="noise-risk" class="text-emerald-400 font-semibold">해풍 외 무소음</span>
+                                        </div>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">동시 녹음 적합도</span>
+                                            <span class="text-emerald-400 font-semibold">매우 우수 (별도 방음 불필요)</span>
+                                        </div>
+                                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+                                            <div id="noise-progress" class="bg-emerald-500 h-full w-1/4 transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="showToast('소음 측정 센서 실시간 동기화 완료: 31.8 dB', 'success')" class="w-full mt-5 py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-all">
+                                    실시간 소음 센서 핑 테스트
+                                </button>
+                            </div>
+
+                            <!-- Electrical Power Capacity Card -->
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <span class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                                            <i class="fa-solid fa-bolt text-sky-400"></i> 전력 공급 용량 (kW)
+                                        </span>
+                                        <span id="power-badge" class="px-2 py-0.5 bg-sky-500/10 text-sky-400 text-[10px] font-semibold rounded-md border border-sky-500/20">대형조명 여유</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">최대 공급 전력</span>
+                                            <span id="power-max" class="text-white font-semibold">30 kW (삼상 분전반)</span>
+                                        </div>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">차단기 트립 위험</span>
+                                            <span id="power-risk" class="text-sky-400 font-semibold">안전 (독립 배선)</span>
+                                        </div>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-slate-400">조명/카메라 허용량</span>
+                                            <span class="text-sky-400 font-semibold">HMI 18kW 동시 가동 가능</span>
+                                        </div>
+                                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+                                            <div id="power-progress" class="bg-sky-400 h-full w-3/4 transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="showToast('분전반 전력 부하 계산이 완료되었습니다. 안전합니다.', 'success')" class="w-full mt-5 py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-all">
+                                    전력 부하 계산기 실행
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Public Data Integration Banner -->
+                        <div class="p-5 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl shrink-0">
+                                    <i class="fa-solid fa-database"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">부산광역시 공공 오픈데이터 & 기상청 API 연동</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">부산 지역 일조량 계산식, 소음공해 측정망, 전력망 데이터를 실시간 동기화합니다.</p>
+                                </div>
+                            </div>
+                            <button onclick="showToast('부산 오픈데이터 최신 동기화 완료!', 'success')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-all shrink-0">
+                                데이터 새로고침
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 3: SIMULATOR (2D 도면 시뮬레이터) -->
+                <section id="tab-simulator" class="space-y-6 hidden">
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-compass-drafting text-emerald-400"></i> 탭 2: 2D 도면 및 장비 시뮬레이션
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-1">도면 위에 카메라, 조명, 오디오 장비를 드래그 앤 드롭하여 배치하고 앵글을 미리 확인하세요.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="resetCanvas()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-rotate-right"></i> 초기화
+                                </button>
+                                <button onclick="showToast('도면 배치가 성공적으로 저장 및 스태프에게 공유되었습니다!', 'success')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-share-nodes"></i> 스태프 공유
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Simulator Layout -->
+                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            <!-- Toolbox Sidebar -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+                                <h4 class="font-bold text-xs text-slate-300 uppercase tracking-wider">장비 툴박스 (드래그)</h4>
+                                <div class="space-y-2">
+                                    <div draggable="true" ondragstart="drag(event)" id="tool-camera" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-grab flex items-center gap-3 transition-all">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm">
+                                            <i class="fa-solid fa-video"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-semibold text-slate-200">시네마 카메라 (A시점)</p>
+                                            <p class="text-[10px] text-slate-400">드래그하여 배치</p>
+                                        </div>
+                                    </div>
+                                    <div draggable="true" ondragstart="drag(event)" id="tool-light" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-grab flex items-center gap-3 transition-all">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm">
+                                            <i class="fa-solid fa-lightbulb"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-semibold text-slate-200">키라이트 (LED조명)</p>
+                                            <p class="text-[10px] text-slate-400">300W 주광색</p>
+                                        </div>
+                                    </div>
+                                    <div draggable="true" ondragstart="drag(event)" id="tool-mic" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-grab flex items-center gap-3 transition-all">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                                            <i class="fa-solid fa-microphone"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-semibold text-slate-200">붐 마이크 & 리시버</p>
+                                            <p class="text-[10px] text-slate-400">지향성 오디오</p>
+                                        </div>
+                                    </div>
+                                    <div draggable="true" ondragstart="drag(event)" id="tool-actor" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-grab flex items-center gap-3 transition-all">
+                                        <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-sm">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-semibold text-slate-200">출연자 / 마크</p>
+                                            <p class="text-[10px] text-slate-400">동선 기준점</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-4 border-t border-slate-800">
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                                        💡 팁: 장비를 도면 위로 드래그 앤 드롭한 뒤 클릭하여 삭제하거나 각도를 조정할 수 있습니다.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Canvas Dropzone -->
+                            <div class="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center relative min-h-[480px]" ondragover="allowDrop(event)" ondrop="drop(event)">
+                                <div class="absolute inset-4 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center pointer-events-none">
+                                    <div class="text-center">
+                                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest">해운대 오션뷰 스튜디오 A동 (12m x 9m)</p>
+                                        <p class="text-[10px] text-slate-600 mt-1">창가 방향 (남동향 오션뷰)</p>
+                                    </div>
+                                </div>
+
+                                <!-- Dropped Elements Container -->
+                                <div id="canvas-dropzone" class="absolute inset-4 pointer-events-auto">
+                                    <div class="absolute top-16 left-20 p-3 bg-indigo-950/80 border border-indigo-500/50 rounded-xl shadow-lg cursor-pointer flex items-center gap-2 text-indigo-300 text-xs">
+                                        <i class="fa-solid fa-video"></i> 카메라 A시점
+                                    </div>
+                                    <div class="absolute top-16 right-24 p-3 bg-amber-950/80 border border-amber-500/50 rounded-xl shadow-lg cursor-pointer flex items-center gap-2 text-amber-300 text-xs">
+                                        <i class="fa-solid fa-lightbulb"></i> 키라이트 300W
+                                    </div>
+                                    <div class="absolute bottom-20 left-1/2 -translate-x-1/2 p-3 bg-sky-950/80 border border-sky-500/50 rounded-xl shadow-lg cursor-pointer flex items-center gap-2 text-sky-300 text-xs">
+                                        <i class="fa-solid fa-user"></i> 출연자 마크
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 4: MATCHING (장비 & 스태프 매칭) -->
+                <section id="tab-matching" class="space-y-6 hidden">
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-people-group text-emerald-400"></i> 탭 3: 부산 인근 장비 대여점 & 전문 스태프 매칭
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-1">촬영지에 맞춤화된 부산 권역 장비 렌탈샵과 전문 촬영감독·오디오 스태프를 연결합니다.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Equipment Rental Shops -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                                <h4 class="font-bold text-sm text-white mb-4 flex items-center gap-2">
+                                    <i class="fa-solid fa-camera-retro text-emerald-400"></i> 부산 제휴 장비 대여점
+                                </h4>
+                                <div class="space-y-3">
+                                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                                        <div>
+                                            <p class="font-semibold text-xs text-white">센텀 시네마 렌탈샵</p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">FX6, 아라미스 조명, 지미집 대여 가능</p>
+                                        </div>
+                                        <button onclick="showToast('센텀 렌탈샵 장비 견적 요청이 전송되었습니다.', 'success')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white text-xs font-semibold rounded-lg border border-emerald-500/30 transition-all">
+                                            장비 견적
+                                        </button>
+                                    </div>
+                                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                                        <div>
+                                            <p class="font-semibold text-xs text-white">해운대 방송장비 협동조합</p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">RED 코모도, 무선 송수신 세트 보유</p>
+                                        </div>
+                                        <button onclick="showToast('해운대 장비 협동조합 견적 요청이 전송되었습니다.', 'success')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white text-xs font-semibold rounded-lg border border-emerald-500/30 transition-all">
+                                            장비 견적
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Professional Crew Matching -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                                <h4 class="font-bold text-sm text-white mb-4 flex items-center gap-2">
+                                    <i class="fa-solid fa-user-tie text-indigo-400"></i> 부산 전문 촬영 스태프 매칭
+                                </h4>
+                                <div class="space-y-3">
+                                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                                        <div>
+                                            <p class="font-semibold text-xs text-white">김철수 촬영 감독 (DP)</p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">부산 로케이션 영화 및 CF 경력 12년차</p>
+                                        </div>
+                                        <button onclick="showToast('김철수 감독님께 매칭 요청이 전송되었습니다.', 'success')" class="px-3 py-1.5 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white text-xs font-semibold rounded-lg border border-indigo-500/30 transition-all">
+                                            매칭 요청
+                                        </button>
+                                    </div>
+                                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                                        <div>
+                                            <p class="font-semibold text-xs text-white">박영희 조명 감독 (Gaffer)</p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">부산영상위원회 협력 조명팀 리더</p>
+                                        </div>
+                                        <button onclick="showToast('박영희 감독님께 매칭 요청이 전송되었습니다.', 'success')" class="px-3 py-1.5 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white text-xs font-semibold rounded-lg border border-indigo-500/30 transition-all">
+                                            매칭 요청
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 5: BOOKING (원스톱 대관 & 예약) -->
+                <section id="tab-booking" class="space-y-6 hidden">
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-building-shield text-emerald-400"></i> 탭 4: 원스톱 대관 & 예약 (환경 인증 뱃지)
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-1">전력 및 소음 정밀 측정이 완료된 검증된 부산 스튜디오를 안전하게 예약하고 결제하세요.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input type="text" placeholder="스튜디오 검색..." class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        <!-- Studios Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Studio 1 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between group">
+                                <div>
+                                    <div class="h-44 bg-slate-800 relative overflow-hidden">
+                                        <img src="https://placehold.co/600x400/0f172a/10b981?text=Busan+Haeundae" alt="스튜디오" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500">
+                                        <span class="absolute top-3 right-3 px-2.5 py-1 bg-emerald-500 text-slate-950 text-[10px] font-bold rounded-lg shadow-md flex items-center gap-1">
+                                            <i class="fa-solid fa-shield-check"></i> 환경 검증 인증 뱃지
+                                        </span>
+                                    </div>
+                                    <div class="p-5">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h4 class="font-bold text-sm text-white">해운대 오션뷰 스튜디오 A동</h4>
+                                            <span class="text-emerald-400 font-bold text-sm">₩60,000 <span class="text-xs text-slate-400 font-normal">/시간</span></span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 leading-relaxed">남동향 대형 통창으로 바다 조망 완벽 보장. 소음 32dB 이하 방음 완료.</p>
+                                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400">
+                                            <span><i class="fa-solid fa-bolt text-sky-400"></i> 30kW</span>
+                                            <span>•</span>
+                                            <span><i class="fa-solid fa-volume-high text-emerald-400"></i> 방음최우수</span>
+                                            <span>•</span>
+                                            <span><i class="fa-solid fa-square-parking text-amber-400"></i> 주차완비</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-5 pt-0">
+                                    <button onclick="showToast('해운대 오션뷰 스튜디오 예약 신청 완료! (안전결제 연동)', 'success')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-calendar-check"></i> 원스톱 대관 예약하기
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Studio 2 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between group">
+                                <div>
+                                    <div class="h-44 bg-slate-800 relative overflow-hidden">
+                                        <img src="https://placehold.co/600x400/0f172a/6366f1?text=Busan+Gwangalli" alt="스튜디오" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500">
+                                        <span class="absolute top-3 right-3 px-2.5 py-1 bg-emerald-500 text-slate-950 text-[10px] font-bold rounded-lg shadow-md flex items-center gap-1">
+                                            <i class="fa-solid fa-shield-check"></i> 환경 검증 인증 뱃지
+                                        </span>
+                                    </div>
+                                    <div class="p-5">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h4 class="font-bold text-sm text-white">광안리 루프탑 호리존 B동</h4>
+                                            <span class="text-emerald-400 font-bold text-sm">₩80,000 <span class="text-xs text-slate-400 font-normal">/시간</span></span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 leading-relaxed">광안대교 뷰와 루프탑 호리존. 뮤직비디오 및 CF 촬영 최적화 공간.</p>
+                                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400">
+                                            <span><i class="fa-solid fa-bolt text-sky-400"></i> 40kW</span>
+                                            <span>•</span>
+                                            <span><i class="fa-solid fa-volume-high text-emerald-400"></i> 방음양호</span>
+                                            <span>•</span>
+                                            <span><i class="fa-solid fa-square-parking text-amber-400"></i> 발렛가능</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-5 pt-0">
+                                    <button onclick="showToast('광안리 루프탑 호리존 예약 신청 완료! (안전결제 연동)', 'success')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-calendar-check"></i> 원스톱 대관 예약하기
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Studio 3 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between group">
+                                <div>
+                                    <div class="h-44 bg-slate-800 relative overflow-hidden">
+                                        <img src="https://placehold.co/600x400/0f172a/06b6d4?text=Busan+Yeongdo" alt="스튜디오" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500">
+                                        <span class="absolute top-3 right-3 px-2.5 py-1 bg-emerald-500 text-slate-950 text-[10px] font-bold rounded-lg shadow-md flex items-center gap-1">
+                                            <i class="fa-solid fa-shield-check"></i> 환경 검증 인증 뱃지
+                                        </span>
+                                    </div>
+                                    <div class="p-5">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h4 class="font-bold text-sm text-white">영도 창고형 시네마틱 스튜디오</h4>
+                                            <span class="text-emerald-400 font-bold text-sm">₩100,000 <span class="text-xs text-slate-400 font-normal">/시간</span></span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 leading-relaxed">대형 느와르 영화 및 웹드라마 전용. 층고 7m, 대형 삼상 분전반 완비.</p>
+                                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400">
+                                            <span><i class="fa-solid fa-bolt text-sky-400"></i> 70kW</span>
+                                            <span>•</span>
+                                            <span><i class="fa-solid fa-volume-high text-emerald-400"></i> 완벽방음</span>
+                                            <span>•</span>
+                                            <span><i class="fa-solid fa-square-parking text-amber-400"></i> 대형트럭진입</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-5 pt-0">
+                                    <button onclick="showToast('영도 창고형 스튜디오 예약 신청 완료! (안전결제 연동)', 'success')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-calendar-check"></i> 원스톱 대관 예약하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Tab Management
+        const tabs = ['dashboard', 'inspector', 'simulator', 'matching', 'booking'];
+        const titles = {
+            'dashboard': '프로젝트 통합 현황',
+            'inspector': '탭 1: 로케이션 환경 인스펙터',
+            'simulator': '탭 2: 2D 도면 및 장비 시뮬레이터',
+            'matching': '탭 3: 장비 & 스태프 매칭',
+            'booking': '탭 4: 원스톱 대관 & 예약'
+        };
+
+        const breadcrumbs = {
+            'dashboard': 'Workspace / 대시보드 요약',
+            'inspector': 'Workspace / 환경 인스펙터',
+            'simulator': 'Workspace / 2D 도면 시뮬레이터',
+            'matching': 'Workspace / 장비 & 스태프 매칭',
+            'booking': 'Workspace / 원스톱 대관 & 예약'
+        };
+
+        function switchTab(tabId) {
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                    nav.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm";
+                } else {
+                    el.classList.add('hidden');
+                    nav.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200";
+                }
+            });
+            document.getElementById('page-title').innerText = titles[tabId];
+            document.getElementById('current-breadcrumb').innerText = breadcrumbs[tabId];
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColors = {
+                success: 'bg-emerald-950 border-emerald-500/50 text-emerald-200',
+                info: 'bg-slate-950 border-slate-700 text-slate-200',
+                error: 'bg-rose-950 border-rose-500/50 text-rose-200'
+            };
+
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                info: 'fa-circle-info text-sky-400',
+                error: 'fa-triangle-exclamation text-rose-400'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-xl border shadow-xl backdrop-blur-md transition-all duration-300 translate-y-2 opacity-0 ${bgColors[type] || bgColors.success}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.success} text-base"></i>
+                <span class="text-xs font-semibold">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Inspector Data Updater (Busan Locations)
+        function updateInspectorData() {
+            const select = document.getElementById('busan-spot-select');
+            const val = select.value;
+            
+            const sunRise = document.getElementById('sun-rise');
+            const sunPeak = document.getElementById('sun-peak');
+            const sunGolden = document.getElementById('sun-golden');
+            const noiseAvg = document.getElementById('noise-avg');
+            const powerMax = document.getElementById('power-max');
+
+            if (val === 'haeundae') {
+                sunRise.innerText = "06:12 AM";
+                sunPeak.innerText = "12:30 ~ 14:30";
+                sunGolden.innerText = "18:10 ~ 19:00";
+                noiseAvg.innerText = "32 dB (조용한 실내)";
+                powerMax.innerText = "30 kW (삼상 분전반)";
+                showToast('해운대 오션뷰 스튜디오 데이터로 갱신되었습니다.', 'info');
+            } else if (val === 'gwangalli') {
+                sunRise.innerText = "06:13 AM";
+                sunPeak.innerText = "12:40 ~ 14:50";
+                sunGolden.innerText = "18:15 ~ 19:05";
+                noiseAvg.innerText = "38 dB (파도 소리 양호)";
+                powerMax.innerText = "40 kW (루프탑 단독)";
+                showToast('광안리 루프탑 스튜디오 데이터로 갱신되었습니다.', 'info');
+            } else if (val === 'yeongdo') {
+                sunRise.innerText = "06:11 AM";
+                sunPeak.innerText = "12:20 ~ 14:20";
+                sunGolden.innerText = "18:05 ~ 18:55";
+                noiseAvg.innerText = "28 dB (완벽 방음 창고)";
+                powerMax.innerText = "70 kW (대형 시네마틱)";
+                showToast('영도 창고형 스튜디오 데이터로 갱신되었습니다.', 'info');
+            } else if (val === 'nampodong') {
+                sunRise.innerText = "06:14 AM";
+                sunPeak.innerText = "13:00 ~ 15:00";
+                sunGolden.innerText = "18:20 ~ 19:10";
+                noiseAvg.innerText = "40 dB (도심 카페 소음)";
+                powerMax.innerText = "25 kW (일반 분전반)";
+                showToast('남포동 올드카페 세트장 데이터로 갱신되었습니다.', 'info');
+            }
+        }
+
+        function toggleSunSimulation() {
+            showToast('일일 채광 변화 타임랩스 시뮬레이션이 활성화되었습니다.', 'success');
+        }
+
+        // Drag and Drop 2D Simulator Logic
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const dropzone = document.getElementById('canvas-dropzone');
+            
+            let label = "장비";
+            let icon = "fa-camera";
+            let colorClass = "bg-slate-800 text-slate-200 border-slate-700";
+
+            if (data === 'tool-camera') {
+                label = "시네마 카메라 A";
+                icon = "fa-video";
+                colorClass = "bg-indigo-950/80 text-indigo-300 border-indigo-500/50";
+            } else if (data === 'tool-light') {
+                label = "키라이트 300W";
+                icon = "fa-lightbulb";
+                colorClass = "bg-amber-950/80 text-amber-300 border-amber-500/50";
+            } else if (data === 'tool-mic') {
+                label = "지향성 붐마이크";
+                icon = "fa-microphone";
+                colorClass = "bg-emerald-950/80 text-emerald-300 border-emerald-500/50";
+            } else if (data === 'tool-actor') {
+                label = "출연자 피벗 마크";
+                icon = "fa-user";
+                colorClass = "bg-sky-950/80 text-sky-300 border-sky-500/50";
+            }
+
+            const rect = dropzone.getBoundingClientRect();
+            const x = ev.clientX - rect.left - 50;
+            const y = ev.clientY - rect.top - 20;
+
+            const newEl = document.createElement('div');
+            newEl.className = `absolute p-3 rounded-xl border shadow-lg cursor-pointer flex items-center gap-2 text-xs ${colorClass}`;
+            newEl.style.left = `${Math.max(0, x)}px`;
+            newEl.style.top = `${Math.max(0, y)}px`;
+            newEl.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
+            
+            dropzone.appendChild(newEl);
+            showToast('도면에 장비가 추가되었습니다.', 'success');
+        }
+
+        function resetCanvas() {
+            const dropzone = document.getElementById('canvas-dropzone');
+            dropzone.innerHTML = `
+                <div class="absolute top-16 left-20 p-3 bg-indigo-950/80 border border-indigo-500/50 rounded-xl shadow-lg cursor-pointer flex items-center gap-2 text-indigo-300 text-xs">
+                    <i class="fa-solid fa-video"></i> 카메라 A시점
+                </div>
+                <div class="absolute top-16 right-24 p-3 bg-amber-950/80 border border-amber-500/50 rounded-xl shadow-lg cursor-pointer flex items-center gap-2 text-amber-300 text-xs">
+                    <i class="fa-solid fa-lightbulb"></i> 키라이트 300W
+                </div>
+                <div class="absolute bottom-20 left-1/2 -translate-x-1/2 p-3 bg-sky-950/80 border border-sky-500/50 rounded-xl shadow-lg cursor-pointer flex items-center gap-2 text-sky-300 text-xs">
+                    <i class="fa-solid fa-user"></i> 출연자 마크
+                </div>
+            `;
+            showToast('도면 시뮬레이터가 초기화되었습니다.', 'info');
+        }
+    </script>
+</body>
+</html>
